@@ -1,7 +1,7 @@
-#include "lexer.h"
-#include "lex_language_rules.h"
-#include "source_loc.h"
-#include "token.h"
+#include "../include/lexer.h"
+#include "../include/lex_language_rules.h"
+#include "../include/source_loc.h"
+#include "../include/token.h"
 #include <cctype>
 #include <charconv>
 #include <cstddef>
