@@ -1,7 +1,16 @@
 #include "KaleidoscopeJIT.h"
+#include "athens_grammar_pack.h"
+#include "athens_lex_rules.h"
 #include "codegen.h"
 #include "lexer.h"
 #include "parser.h"
+#include "../../shared/frontend/lex/include/char_stream.h"
+#include "../../shared/frontend/lex/include/lexer.h"
+#include "../../shared/frontend/parse/include/diagnostics.h"
+#include "../../shared/frontend/parse/include/parse_context.h"
+#include "../../shared/frontend/parse/include/parser_engine.h"
+#include "../../shared/frontend/parse/include/parser_registry.h"
+#include "../../shared/frontend/parse/include/token_stream.h"
 #include <fstream>
 #include <iostream>
 
@@ -81,6 +90,30 @@ static void printIfVerbose(bool verbose, const char *str) {
 
 enum class Mode { Run, EmitLLVMIR };
 
+static void InstallStandardBinaryOperators() {
+  BinopPrecedence.clear();
+  BinopPrecedence['='] = 2;
+  BinopPrecedence['<'] = 10;
+  BinopPrecedence['+'] = 20;
+  BinopPrecedence['-'] = 20;
+  BinopPrecedence['*'] = 40; // highest.
+}
+
+class StderrDiagnostics final : public frontend::parse::IDiagnostics {
+public:
+  void error(const frontend::lex::SourceLoc &loc,
+             std::string_view message) override {
+    hadError_ = true;
+    std::cerr << loc.start_line << ':' << loc.start_column << ": " << message
+              << '\n';
+  }
+
+  bool hadError() const { return hadError_; }
+
+private:
+  bool hadError_{false};
+};
+
 static void HandleDefinition(Mode mode, bool verbose) {
   if (auto FnAST = ParseDefinition()) {
     if (auto *FnIR = FnAST->codegen()) {
@@ -125,6 +158,9 @@ static void HandleExtern(Mode mode, bool verbose) {
 }
 
 static void HandleTopLevelExpression(Mode mode, bool verbose) {
+  (void)mode;
+  (void)verbose;
+
   // Evaluate a top-level expression into an anonymous function.
   if (auto FnAST = ParseTopLevelExpr()) {
     if (FnAST->codegen()) {
@@ -161,6 +197,135 @@ static void HandleTopLevelExpression(Mode mode, bool verbose) {
   }
 }
 
+static bool HandleSharedDefinition(std::unique_ptr<FunctionAST> fnAST,
+                                   Mode mode, bool verbose) {
+  if (!fnAST)
+    return false;
+
+  if (auto *fnIR = fnAST->codegen()) {
+    if (mode == Mode::EmitLLVMIR)
+      fnIR->print(outs());
+
+    if (verbose) {
+      fprintf(stderr, "Read function definition with shared parser:\n");
+      fnIR->print(errs());
+      fprintf(stderr, "\n");
+    }
+
+    ExitOnErr(TheJIT->addModule(
+        orc::ThreadSafeModule(std::move(TheModule), std::move(TheContext))));
+    InitializeModuleAndManagers();
+    return true;
+  }
+
+  return false;
+}
+
+static bool HandleSharedExtern(std::unique_ptr<PrototypeAST> protoAST,
+                               Mode mode, bool verbose) {
+  if (!protoAST)
+    return false;
+
+  const std::string name = protoAST->getName();
+  if (auto *fnIR = protoAST->codegen()) {
+    if (mode == Mode::EmitLLVMIR)
+      fnIR->print(outs());
+
+    if (verbose) {
+      fprintf(stderr, "Read extern with shared parser:\n");
+      fnIR->print(errs());
+      fprintf(stderr, "\n");
+    }
+
+    FunctionProtos[name] = std::move(protoAST);
+    return true;
+  }
+
+  return false;
+}
+
+static bool HandleSharedTopLevelExpression(std::unique_ptr<ExprAST> expr) {
+  if (!expr)
+    return false;
+
+  auto proto =
+      std::make_unique<PrototypeAST>("__anon_expr", std::vector<std::string>());
+  auto fnAST = std::make_unique<FunctionAST>(std::move(proto), std::move(expr));
+
+  if (!fnAST->codegen())
+    return false;
+
+  auto rt = TheJIT->getMainJITDylib().createResourceTracker();
+  auto tsm = llvm::orc::ThreadSafeModule(std::move(TheModule),
+                                         std::move(TheContext));
+  ExitOnErr(TheJIT->addModule(std::move(tsm), rt));
+  InitializeModuleAndManagers();
+
+  auto exprSymbol = ExitOnErr(TheJIT->lookup("__anon_expr"));
+  double (*fp)() = exprSymbol.toPtr<double (*)()>();
+  fprintf(stderr, "%f\n", fp());
+
+  ExitOnErr(rt->remove());
+  return true;
+}
+
+static bool LoadFileSharedParser(const std::string &path, Mode mode,
+                                 bool verbose) {
+  std::ifstream in(path);
+  if (!in.is_open()) {
+    std::string msg = "could not open " + path + "\n";
+    printIfVerbose(verbose, msg.c_str());
+    return false;
+  }
+
+  frontend::lex::CharStream chars(in);
+  athens::AthensLexRules rules;
+  frontend::lex::Lexer lexer(chars, rules);
+  frontend::parse::TokenStream tokens(lexer);
+
+  athens::AthensParseBuilder builder;
+  athens::AthensRegistry registry;
+  athens::registerAthensGrammar(registry);
+  StderrDiagnostics diag;
+  frontend::parse::ParseContext<athens::AthensParseBuilder> ctx{tokens, builder,
+                                                                diag};
+  athens::AthensEngine parser(ctx, registry);
+
+  while (!tokens.is(frontend::lex::TokenKind::Eof)) {
+    if (tokens.match(frontend::lex::TokenKind::Semicolon))
+      continue;
+
+    if (tokens.is(frontend::lex::TokenKind::KwFuncDef) ||
+        tokens.is(frontend::lex::TokenKind::KwExtern)) {
+      athens::AthensParseBuilder::Item item = parser.parseItem();
+      if (diag.hadError())
+        return false;
+
+      if (item.function) {
+        if (!HandleSharedDefinition(std::move(item.function), mode, verbose))
+          return false;
+      } else if (item.prototype) {
+        if (!HandleSharedExtern(std::move(item.prototype), mode, verbose))
+          return false;
+      } else {
+        return false;
+      }
+    } else {
+      auto expr = parser.parseExpression();
+      if (diag.hadError())
+        return false;
+      if (!HandleSharedTopLevelExpression(std::move(expr)))
+        return false;
+    }
+
+    (void)tokens.match(frontend::lex::TokenKind::Semicolon);
+  }
+
+  std::string msg = "\n" + path + " loaded with shared parser.\n\n";
+  printIfVerbose(verbose, msg.c_str());
+  return true;
+}
+
 static void lexerLoop(bool isRepl, Mode mode, bool verbose) {
   if (isRepl)
     fprintf(stderr, "Welcome to Athens!\n> ");
@@ -173,10 +338,13 @@ static void lexerLoop(bool isRepl, Mode mode, bool verbose) {
       fprintf(stderr, "> ");
     }
 
-    switch (CurTok) {
-    case static_cast<Token>(';'): // ignore top-level semicolons.
+    if (CurTok == static_cast<Token>(';')) {
+      // Ignore top-level semicolons.
       getNextToken();
-      break;
+      continue;
+    }
+
+    switch (CurTok) {
     case Token::def:
       HandleDefinition(mode, verbose);
       break;
@@ -226,6 +394,7 @@ const char *HelpText = R"(Usage: athens [options] [file]
 Options:
   --llvmir        Emit LLVM IR instead of executing the program
                   All output except LLVM IR are put in stderr
+  --new-parser    Use the shared lexer/parser path for file input
   -h, --help      Show this help message and exit
   -v, --verbose   Print internal stuff
 
@@ -244,14 +413,6 @@ int main(int argc, char **argv) {
   InitializeNativeTargetAsmPrinter();
   InitializeNativeTargetAsmParser();
 
-  // Install standard binary operators.
-  // 1 is lowest precedence.
-  BinopPrecedence['='] = 2;
-  BinopPrecedence['<'] = 10;
-  BinopPrecedence['+'] = 20;
-  BinopPrecedence['-'] = 20;
-  BinopPrecedence['*'] = 40; // highest.
-
   TheJIT = ExitOnErr(llvm::orc::KaleidoscopeJIT::Create());
 
   // Make the module, which holds all the code.
@@ -260,6 +421,7 @@ int main(int argc, char **argv) {
 
   bool printHelp = false;
   bool verbose = false;
+  bool useNewParser = false;
 
   Mode mode = Mode::Run;
   const char *InputFile = nullptr;
@@ -273,6 +435,8 @@ int main(int argc, char **argv) {
     else if ((std::strcmp(argv[i], "-v") == 0) ||
              (std::strcmp(argv[i], "--verbose") == 0))
       verbose = true;
+    else if (std::strcmp(argv[i], "--new-parser") == 0)
+      useNewParser = true;
     else
       InputFile = argv[i];
   }
@@ -282,11 +446,32 @@ int main(int argc, char **argv) {
     return 0;
   }
 
+  // Install standard binary operators.
+  // 1 is lowest precedence.
+  InstallStandardBinaryOperators();
+
+  if (useNewParser && !InputFile) {
+    std::cerr << "--new-parser currently supports file input only; REPL still "
+                 "uses the old parser.\n";
+    return 1;
+  }
+
   // Load the runtime support library (written in Athens)
-  LoadFile("langs/athens/lib/runtime.ath", Mode::Run, verbose);
+  if (useNewParser) {
+    if (!LoadFileSharedParser("langs/athens/lib/runtime.ath", Mode::Run,
+                              verbose))
+      return 1;
+  } else {
+    LoadFile("langs/athens/lib/runtime.ath", Mode::Run, verbose);
+  }
 
   if (InputFile) {
-    LoadFile(InputFile, mode, verbose);
+    if (useNewParser) {
+      if (!LoadFileSharedParser(InputFile, mode, verbose))
+        return 1;
+    } else {
+      LoadFile(InputFile, mode, verbose);
+    }
   } else {
     // Run the main "interpreter loop" now.
     LoadRepl(mode, verbose);
