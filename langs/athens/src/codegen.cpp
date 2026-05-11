@@ -13,7 +13,7 @@
 
 #include "codegen.h"
 #include "error.h"
-#include "parser.h"
+#include "ast.h"
 
 using namespace llvm;
 
@@ -26,6 +26,7 @@ std::unique_ptr<FunctionPassManager> TheFPM;
 std::unique_ptr<LoopAnalysisManager> TheLAM;
 std::unique_ptr<FunctionAnalysisManager> TheFAM;
 
+std::map<char, int> BinopPrecedence;
 std::map<std::string, std::unique_ptr<PrototypeAST>> FunctionProtos;
 
 /* Some Helpers */

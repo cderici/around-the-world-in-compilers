@@ -8,7 +8,6 @@
 #include "../../../shared/frontend/parse/include/parser_engine.h"
 #include "../../../shared/frontend/parse/include/parser_registry.h"
 #include "athens_parse_builder.h"
-#include "parser.h"
 
 #include <memory>
 #include <string>
@@ -158,7 +157,7 @@ parseFor(AthensContext &ctx, AthensEngine &engine, frontend::lex::Token tok) {
   AthensParseBuilder::Expr step;
 
   // The step is optional; codegen supplies a default of 1.0 when this remains
-  // null, matching the old parser/codegen path.
+  // null; codegen supplies Athens' default step value.
   if (ctx.tokenStream.match(frontend::lex::TokenKind::Comma))
     step = engine.parseExpression();
 

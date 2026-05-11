@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "parser.h"
+#include "ast.h"
 #include "../../../shared/frontend/lex/include/source_loc.h"
 #include "../../../shared/frontend/lex/include/token.h"
 

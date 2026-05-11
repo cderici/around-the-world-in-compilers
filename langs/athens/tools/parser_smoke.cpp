@@ -1,5 +1,5 @@
 // parser_smoke is an isolated executable for validating that Athens can create
-// the new shared parser pipeline without touching the existing compiler driver.
+// the shared parser pipeline outside the compiler driver.
 // It uses AthensLexRules plus AthensParseBuilder so this step proves the shared
 // parser can produce Athens' existing AST nodes and run the basic expression
 // subset through Athens' existing codegen.

@@ -29,12 +29,12 @@ make
 
 ## Run
 
-For repl, just run athens with no input/flags.
+For the REPL, run Athens with no input file.
 ```
 ./athens
 ```
 
-You may pass any Athens source as the first argument. 
+Pass an Athens source file as the first argument.
 ```
 ./athens my-source.ath
 ```
@@ -44,7 +44,7 @@ To get the LLVM IR, pass in in the `--llvmir` flag:
 ./athens --llvmir test-programs/fib.ath > fibsIR.ll
 ```
 
-That flag is useful for repl experimentation too:
+That flag is useful for REPL experimentation too:
 ```
 ./athens --llvmir
 ```
@@ -125,7 +125,7 @@ unary-op-prot          ::= "unary"  operator-char "(" identifier ")"
 binary-op-prot         ::= "binary" operator-char int "(" parameter-list ")"
 
 parameter-list         ::= identifier parameter-list-tail | ε
-parameter-list-tail    ::= "," identifier parameter-list-tail | ε
+parameter-list-tail    ::= identifier parameter-list-tail | ε
 
 ; ---------- expressions ----------
 expression             ::= var-expr
@@ -170,6 +170,6 @@ argument-list-tail     ::= "," expression argument-list-tail | ε
 identifier             ::= alphanumeric symbols
 number                 ::= every number in athens is a double
 operator-char          ::= any non-alphanumeric, non-whitespace character
-                           except delimiter characters like "(", ")", ",", "="
+                           except delimiter characters like "(", ")", ","
                            (athens supports user-defined operators)
 ```

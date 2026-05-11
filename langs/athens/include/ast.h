@@ -1,10 +1,15 @@
+// ast.h declares Athens' AST node types and the shared codegen state they use.
 
 #pragma once
 
-#include "lexer.h"
+#include <llvm/IR/Function.h>
 #include <llvm/IR/Value.h>
 
+#include <cassert>
 #include <map>
+#include <memory>
+#include <string>
+#include <utility>
 #include <vector>
 
 using namespace llvm;
@@ -160,19 +165,5 @@ public:
   Function *codegen();
 };
 
-// CurTok/getNextToken - provide a simple token buffer. Curtok is the current
-// token the parser is looking at. getNextToken reads another token from the
-// lexer and updates CurTok with its results.
-extern Token CurTok;
-// This CurTok is like in the tetris game you'd see the next piece that's
-// coming. Parser can look ahead.
-Token getNextToken();
-
-// BinopPrecedence
 extern std::map<char, int> BinopPrecedence;
-
-std::unique_ptr<FunctionAST> ParseDefinition();
-std::unique_ptr<FunctionAST> ParseTopLevelExpr();
-std::unique_ptr<PrototypeAST> ParseExtern();
-
 extern std::map<std::string, std::unique_ptr<PrototypeAST>> FunctionProtos;

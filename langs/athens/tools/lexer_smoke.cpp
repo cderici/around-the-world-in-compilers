@@ -1,5 +1,5 @@
-// lexer_smoke is an isolated executable for validating the new shared lexer
-// against Athens language rules before replacing Athens' old frontend path.
+// lexer_smoke is an isolated executable for validating the shared lexer against
+// Athens language rules outside the compiler driver.
 
 #include "../../../shared/frontend/lex/include/char_stream.h"
 #include "../../../shared/frontend/lex/include/lexer.h"
