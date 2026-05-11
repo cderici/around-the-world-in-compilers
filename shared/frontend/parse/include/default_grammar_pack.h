@@ -9,6 +9,7 @@ template <typename BuilderT> struct DefaultGrammarPack {
     registry.setPrefix(frontend::lex::TokenKind::Identifier,
                        prefixIdentifierExpr);
     registry.setPrefix(frontend::lex::TokenKind::Integer, prefixIntegerExpr);
+    registry.setPrefix(frontend::lex::TokenKind::Float, prefixFloatExpr);
     registry.setPrefix(frontend::lex::TokenKind::LParen, prefixParenExpr);
 
     registry.setInfix(frontend::lex::TokenKind::Equal, 5, infixBinaryExpr);
@@ -31,12 +32,22 @@ private:
   }
 
   static typename BuilderT::Expr prefixIntegerExpr(ParseContext<BuilderT> &ctx,
-                                                   ParserEngine<BuilderT> &,
-                                                   frontend::lex::Token tok) {
+                                                    ParserEngine<BuilderT> &,
+                                                    frontend::lex::Token tok) {
     if (auto val = std::get_if<long long>(&tok.literal))
       return ctx.builder.makeInteger(tok, *val);
 
     ctx.diag.error(tok.source_loc, "integer token missing numeric payload");
+    return ctx.builder.makeErrorExpr(tok.source_loc);
+  }
+
+  static typename BuilderT::Expr prefixFloatExpr(ParseContext<BuilderT> &ctx,
+                                                 ParserEngine<BuilderT> &,
+                                                 frontend::lex::Token tok) {
+    if (auto val = std::get_if<double>(&tok.literal))
+      return ctx.builder.makeFloat(tok, *val);
+
+    ctx.diag.error(tok.source_loc, "float token missing numeric payload");
     return ctx.builder.makeErrorExpr(tok.source_loc);
   }
 

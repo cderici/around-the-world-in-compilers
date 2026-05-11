@@ -29,6 +29,7 @@ enum class TokenKind {
   Greater,
   GreaterEqual,
   LogicNot,
+  Operator,
 
   KwFuncDef,
   KwExtern,
@@ -43,7 +44,7 @@ enum class TokenKind {
 
 };
 
-using LiteralValue = std::variant<std::monostate, long long>;
+using LiteralValue = std::variant<std::monostate, long long, double>;
 
 struct Token {
   TokenKind kind{TokenKind::Invalid};

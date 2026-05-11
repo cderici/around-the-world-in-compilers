@@ -1,4 +1,6 @@
 
+#pragma once
+
 #include "lexer.h"
 #include <llvm/IR/Value.h>
 

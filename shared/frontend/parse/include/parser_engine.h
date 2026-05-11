@@ -33,11 +33,12 @@ public:
       if (!infixEntry)
         break;
 
-      if (infixEntry->precedence < minPrecedence)
+      const int precedence = infixEntry->getPrecedence(lookahead);
+      if (precedence < minPrecedence)
         break;
 
       const frontend::lex::Token opTok = ctx_.tokenStream.consume();
-      typename BuilderT::Expr rhs = parseExpression(infixEntry->precedence + 1);
+      typename BuilderT::Expr rhs = parseExpression(precedence + 1);
       lhs = infixEntry->handler(ctx_, *this, std::move(lhs), opTok,
                                 std::move(rhs));
     }

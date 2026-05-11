@@ -5,8 +5,10 @@
 #include <cctype>
 #include <charconv>
 #include <cstddef>
+#include <cstdlib>
 #include <optional>
 #include <span>
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -46,7 +48,9 @@ Token Lexer::next() {
   if (langLexConfig_.isIdentStart(c)) {
     return lexIdentifierOrKeyword();
     // maybe a number?
-  } else if (std::isdigit(static_cast<unsigned char>(c))) {
+  } else if (std::isdigit(static_cast<unsigned char>(c)) ||
+             (c == '.' &&
+              std::isdigit(static_cast<unsigned char>(cs_.peek2())))) {
     return lexNumber();
   } else {
     // then it must be punctuation or invalid
@@ -250,16 +254,40 @@ Token Lexer::lexIdentifierOrKeyword() {
                LiteralValue{}};
 }
 
-// lexNumber lexes a numeric stream
-// returns TokenKind::InvalidNumber if something's off
-// Otherwise returns TokenKind::Integer
+// lexNumber lexes an integer or floating-point numeric stream.
+// Returns TokenKind::InvalidNumber if something is malformed.
 Token Lexer::lexNumber() {
   const std::size_t startPos = cs_.position();
   const std::size_t startLine = cs_.line();
   const std::size_t startCol = cs_.column();
 
-  while (!cs_.eof() && std::isdigit(static_cast<unsigned char>(cs_.peek()))) {
-    cs_.consumeOne();
+  bool sawDot = false;
+  bool invalid = false;
+  while (!cs_.eof()) {
+    const char c = cs_.peek();
+    if (std::isdigit(static_cast<unsigned char>(c))) {
+      cs_.consumeOne();
+      continue;
+    }
+
+    if (c == '.') {
+      if (sawDot)
+        invalid = true;
+      sawDot = true;
+      cs_.consumeOne();
+      continue;
+    }
+
+    break;
+  }
+
+  if (invalid) {
+    while (!cs_.eof() && (std::isdigit(static_cast<unsigned char>(cs_.peek())) ||
+                          cs_.peek() == '.')) {
+      cs_.consumeOne();
+    }
+  } else {
+    // The loop above already consumed the complete numeric spelling.
   }
 
   const std::size_t endPos = cs_.position();
@@ -267,6 +295,52 @@ Token Lexer::lexNumber() {
   const std::size_t endCol = cs_.column();
 
   const std::string_view lexeme = cs_.view(startPos, endPos);
+
+  if (invalid) {
+    return Token{TokenKind::InvalidNumber, lexeme,
+                 SourceLoc{
+                     .start_offset = startPos,
+                     .end_offset = endPos,
+                     .start_line = startLine,
+                     .start_column = startCol,
+                     .end_line = endLine,
+                     .end_column = endCol,
+                 },
+                 LiteralValue{}};
+  }
+
+  if (sawDot) {
+    const std::string text(lexeme);
+    char *end = nullptr;
+    const double parsed = std::strtod(text.c_str(), &end);
+    if (end != text.c_str() + text.size()) {
+      return Token{TokenKind::InvalidNumber, lexeme,
+                   SourceLoc{
+                       .start_offset = startPos,
+                       .end_offset = endPos,
+                       .start_line = startLine,
+                       .start_column = startCol,
+                       .end_line = endLine,
+                       .end_column = endCol,
+                   },
+                   LiteralValue{}};
+    }
+
+    return Token{TokenKind::Float, lexeme,
+                 SourceLoc{
+                     .start_offset = startPos,
+                     .end_offset = endPos,
+                     .start_line = startLine,
+                     .start_column = startCol,
+                     .end_line = endLine,
+                     .end_column = endCol,
+                 },
+                 LiteralValue{parsed}};
+  }
+
+  while (!cs_.eof() && std::isdigit(static_cast<unsigned char>(cs_.peek()))) {
+    cs_.consumeOne();
+  }
 
   long long parsed = 0;
   const auto parseRes =
@@ -300,7 +374,7 @@ Token Lexer::lexNumber() {
                    .end_line = endLine,
                    .end_column = endCol,
                },
-               literal};
+                literal};
 }
 
 // lexPunctOrInvalid lexes punctuation
@@ -333,6 +407,21 @@ Token Lexer::lexPunctOrInvalid() {
   if (auto k = langLexConfig_.punctuator(one)) {
     cs_.consumeOne();
     return Token{*k, one,
+                 SourceLoc{
+                     .start_offset = startPos,
+                     .end_offset = cs_.position(),
+                     .start_line = startLine,
+                     .start_column = startCol,
+                     .end_line = cs_.line(),
+                     .end_column = cs_.column(),
+                 },
+                 LiteralValue{}};
+  }
+
+  if (!std::isalnum(static_cast<unsigned char>(cs_.peek())) &&
+      !std::isspace(static_cast<unsigned char>(cs_.peek()))) {
+    cs_.consumeOne();
+    return Token{TokenKind::Operator, one,
                  SourceLoc{
                      .start_offset = startPos,
                      .end_offset = cs_.position(),

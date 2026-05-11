@@ -18,8 +18,16 @@ public:
   }
 
   void setInfix(frontend::lex::TokenKind kind, int precedence,
-                InfixExprHandler<BuilderT> handler) {
-    infix_[kind] = InfixEntry<BuilderT>{precedence, std::move(handler)};
+                 InfixExprHandler<BuilderT> handler) {
+    infix_[kind] = InfixEntry<BuilderT>{precedence, {}, std::move(handler)};
+  }
+
+  void setInfixDynamic(
+      frontend::lex::TokenKind kind,
+      std::function<int(const frontend::lex::Token &)> precedenceFor,
+      InfixExprHandler<BuilderT> handler) {
+    infix_[kind] =
+        InfixEntry<BuilderT>{0, std::move(precedenceFor), std::move(handler)};
   }
 
   void setStmt(frontend::lex::TokenKind kind, StmtHandler<BuilderT> handler) {

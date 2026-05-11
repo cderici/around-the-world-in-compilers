@@ -32,7 +32,12 @@ using ItemHandler = std::function<typename BuilderT::Item(
 // Adds precedence tp infix handlers
 template <typename BuilderT> struct InfixEntry {
   int precedence{0};
+  std::function<int(const frontend::lex::Token &)> precedenceFor;
   InfixExprHandler<BuilderT> handler;
+
+  int getPrecedence(const frontend::lex::Token &tok) const {
+    return precedenceFor ? precedenceFor(tok) : precedence;
+  }
 };
 
 } // namespace frontend::parse

@@ -57,6 +57,8 @@ const char *tokenKindName(frontend::lex::TokenKind kind) {
     return "GreaterEqual";
   case TokenKind::LogicNot:
     return "LogicNot";
+  case TokenKind::Operator:
+    return "Operator";
   case TokenKind::KwFuncDef:
     return "KwFuncDef";
   case TokenKind::KwExtern:
