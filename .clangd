@@ -1,7 +1,17 @@
 CompileFlags:
-  Add: [
-    "-std=c++23",
-    "-I/usr/lib/llvm-20/include",
-    "-I../include",
-    "-Iinclude"
-  ]
+  Add:
+    - -std=c++23
+    - -stdlib=libstdc++
+    - --gcc-toolchain=/usr
+    - -Ilangs/athens/include
+    - -Ilangs/berlin/include
+    - -Ilangs/cairo/include
+    - -Ishared/frontend/lex/include
+    - -Ishared/frontend/parse/include
+    - -I../../athens/include
+    - -I../athens/include
+    - -I../berlin/include
+    - -I../cairo/include
+    - -I../../../shared/frontend/lex/include
+    - -I../../../shared/frontend/parse/include
+    - -isystem/usr/lib/llvm-20/include
