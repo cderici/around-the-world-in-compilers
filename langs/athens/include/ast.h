@@ -30,6 +30,7 @@ public:
   NumberExprAST(double Val) : Val(Val) {}
 
   Value *codegen() override;
+  double getVal() const { return Val; }
 };
 
 /// VariableExprAST - Expression class for referencing a variable, like "a".
@@ -55,6 +56,11 @@ public:
       : VarNames(std::move(VarNames)), Body(std::move(Body)) {}
 
   Value *codegen() override;
+  const std::vector<std::pair<std::string, std::unique_ptr<ExprAST>>>
+      &getVarNames() const {
+    return VarNames;
+  }
+  ExprAST &getBodyExpr() const { return *Body; }
 };
 
 /// BinaryExprAST - Expression class for a binary operator.
@@ -69,6 +75,10 @@ public:
 
   Value *codegen() override;
 
+  char getOp() const { return Op; }
+  ExprAST &getLHS() const { return *LHS; }
+  ExprAST &getRHS() const { return *RHS; }
+
 private:
   Value *handleAssignment();
 };
@@ -82,6 +92,8 @@ public:
       : Op(Op), Operand(std::move(Operand)) {}
 
   Value *codegen() override;
+  char getOp() const { return Op; }
+  ExprAST &getOperand() const { return *Operand; }
 };
 
 class IfExprAST : public ExprAST {
@@ -93,6 +105,9 @@ public:
       : Cond(std::move(Cond)), Then(std::move(Then)), Else(std::move(Else)) {}
 
   Value *codegen() override;
+  ExprAST &getCond() const { return *Cond; }
+  ExprAST &getThen() const { return *Then; }
+  ExprAST &getElse() const { return *Else; }
 };
 
 class ForExprAST : public ExprAST {
@@ -107,6 +122,11 @@ public:
         Step(std::move(Step)), Body(std::move(Body)) {}
 
   Value *codegen() override;
+  const std::string &getVarName() const { return VarName; }
+  ExprAST &getStart() const { return *Start; }
+  ExprAST &getEnd() const { return *End; }
+  ExprAST *getStep() const { return Step.get(); }
+  ExprAST &getBodyExpr() const { return *Body; }
 };
 
 /// CallExprAST - Expression class for function calls.
@@ -120,6 +140,8 @@ public:
       : Callee(Callee), Args(std::move(Args)) {}
 
   Value *codegen() override;
+  const std::string &getCallee() const { return Callee; }
+  const std::vector<std::unique_ptr<ExprAST>> &getArgs() const { return Args; }
 };
 
 /// PrototypeAST - This class represents the "prototype" for a function,
@@ -140,6 +162,7 @@ public:
 
   Function *codegen();
   const std::string &getName() const { return Name; }
+  const std::vector<std::string> &getArgs() const { return Args; }
 
   bool isUnaryOp() const { return IsOperator && Args.size() == 1; }
   bool isBinaryOp() const { return IsOperator && Args.size() == 2; }
@@ -163,6 +186,8 @@ public:
       : Proto(std::move(Proto)), Body(std::move(Body)) {}
 
   Function *codegen();
+  const PrototypeAST &getProto() const { return *Proto; }
+  ExprAST &getBody() const { return *Body; }
 };
 
 extern std::map<char, int> BinopPrecedence;

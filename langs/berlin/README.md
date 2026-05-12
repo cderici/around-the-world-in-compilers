@@ -1,44 +1,56 @@
-```
-/*
-Multiline comment
+# Berlin - Athens to MLIR
 
-*/
+Berlin reuses the Athens lexer, parser, and AST, then lowers the parsed program
+to MLIR. It emits standard MLIR dialects including `func`, `arith`, `memref`,
+and `scf`.
 
-```
-func fibrec(x) {
-  # if (x < 3) {
-  #     return 1
-  # } else {
-  #     return fibrec(x-1)+fibrec(x-2)
-  # }
-  if (x < 3)
-    return 1
+## We have:
 
-  return fibrec(x-1)+fibrec(x-2)
-}
+- Function definitions and extern prototypes.
+- Numeric expressions using `f64` values.
+- Variables, assignment, unary minus, and `var ... in` bindings.
+- Binary operators: `+`, `-`, `*`, `<`, and `=`.
+- `if then else` expressions lowered to `scf.if`.
+- `for` expressions lowered to `scf.for`.
+- Function calls lowered to `func.call`.
 
-func fibiter(x) {
-  a = 1
-  b = 1
-  
-  for (i = 3; i < x; i++) {
-    c = a + b
-    a = b
-    b = c
-  }
-}
+Loop bounds are converted from `f64` to integer/index values for `scf.for`.
+When a loop omits the step expression, Berlin uses a default step of `1.0`.
+
+## Example
+
+```ath
+extern printd(x);
+
+def loopTest()
+  for i = 0, 10, 1 in
+    printd(i)
 ```
 
-# call both
-fibrec(10)
-fibiter(10)
+Running Berlin prints MLIR:
 
-func add_array() ret35 {
-  arr = [1,2,3,4]
-  for (i = 0; i < 4; i++) {
-    ret += arr[i]
-  }
-  # returns the specified return var ("ret35") if specified
-  # syntactically invalid if no return var specified and there's no "return" statement
-}
+```sh
+./berlin langs/berlin/examples/simple_loop.ath
 ```
+
+The output includes a private `func.func @loopTest` and an `scf.for` loop.
+
+## Building
+
+From the project root:
+
+```sh
+make berlin
+```
+
+From this directory:
+
+```sh
+make
+```
+
+## Examples
+
+- `examples/simple_loop.ath`
+- `examples/nested_loop.ath`
+- `examples/saxpy.ath`

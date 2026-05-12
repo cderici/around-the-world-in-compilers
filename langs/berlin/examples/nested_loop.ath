@@ -1,0 +1,6 @@
+extern printd(x);
+
+def nestedLoops()
+  for i = 0, 5, 1 in
+    for j = 0, 5, 1 in
+      printd(i * 10 + j)

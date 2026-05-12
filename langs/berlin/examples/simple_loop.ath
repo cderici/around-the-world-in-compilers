@@ -1,0 +1,5 @@
+extern printd(x);
+
+def loopTest()
+  for i = 0, 10, 1 in
+    printd(i)

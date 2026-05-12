@@ -1,0 +1,55 @@
+name: BerlinCI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-berlin:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install LLVM 20, Clang 20, and MLIR 20
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget gnupg lsb-release
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 20
+          sudo apt-get install -y llvm-20 llvm-20-dev libmlir-20 libmlir-20-dev mlir-20-tools
+
+      - name: Build Berlin
+        run: make berlin
+
+      - name: Upload Berlin binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: berlin-binary
+          path: berlin
+
+  test-berlin:
+    needs: build-berlin
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download Berlin binary
+        uses: actions/download-artifact@v4
+        with:
+          name: berlin-binary
+          path: .
+
+      - name: Test Berlin
+        run: |
+          chmod +x ./berlin
+          ./berlin langs/berlin/examples/simple_loop.ath > /tmp/berlin_test.mlir
+          grep -q "scf.for" /tmp/berlin_test.mlir && echo "simple_loop: PASS"
+          ./berlin langs/berlin/examples/nested_loop.ath > /tmp/berlin_test.mlir
+          grep -q "scf.for" /tmp/berlin_test.mlir && echo "nested_loop: PASS"
+          ./berlin langs/berlin/examples/saxpy.ath > /tmp/berlin_test.mlir
+          grep -q "arith.mulf" /tmp/berlin_test.mlir && echo "saxpy: PASS"
