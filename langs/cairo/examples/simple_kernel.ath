@@ -1,0 +1,10 @@
+extern cairoThreadX()
+extern cairoBlockX()
+extern cairoDimX()
+
+def foo(x)
+  x + 1.0
+
+def kernel_simple(a)
+  var i = cairoBlockX() * cairoDimX() + cairoThreadX() in
+  cairoStore(0, i, foo(cairoLoad(0, i)))

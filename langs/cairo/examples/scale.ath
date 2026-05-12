@@ -1,0 +1,7 @@
+extern cairoThreadX()
+extern cairoBlockX()
+extern cairoDimX()
+
+def kernel_scale(data)
+  var i = cairoBlockX() * cairoDimX() + cairoThreadX() in
+  cairoStore(0, i, cairoLoad(0, i) * 2.0)

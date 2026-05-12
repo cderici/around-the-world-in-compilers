@@ -87,7 +87,7 @@ bool AthensLexRules::isIdentStart(char c) const {
 
 // can this character appear after the first char in an identifier?
 bool AthensLexRules::isIdentContinue(char c) const {
-  return std::isalnum(static_cast<unsigned char>(c));
+  return std::isalnum(static_cast<unsigned char>(c)) || c == '_';
 }
 
 } // namespace athens

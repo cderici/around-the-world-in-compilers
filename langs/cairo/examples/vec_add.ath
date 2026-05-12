@@ -1,0 +1,7 @@
+extern cairoThreadX()
+extern cairoBlockX()
+extern cairoDimX()
+
+def kernel_vec_add(a b c)
+  var i = cairoBlockX() * cairoDimX() + cairoThreadX() in
+  cairoStore(2, i, cairoLoad(0, i) + cairoLoad(1, i))
