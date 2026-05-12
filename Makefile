@@ -1,4 +1,4 @@
-LANGS := athens berlin cairo dublin
+LANGS := athens berlin cairo dublin edinburgh
 
 .PHONY: all $(LANGS) clean clean-% clean-build
 
