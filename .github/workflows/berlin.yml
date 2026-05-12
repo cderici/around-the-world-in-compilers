@@ -38,6 +38,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install LLVM 20 and MLIR 20 runtime libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget gnupg lsb-release
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 20
+          sudo apt-get install -y libmlir-20
+
       - name: Download Berlin binary
         uses: actions/download-artifact@v4
         with:
