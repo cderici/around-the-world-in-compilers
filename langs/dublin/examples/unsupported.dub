@@ -1,0 +1,4 @@
+// foo is not a Dublin builtin, so this errors
+
+verify unsupported(x i32)
+  assert foo(x);

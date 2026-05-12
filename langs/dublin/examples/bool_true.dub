@@ -1,0 +1,4 @@
+// smallest possible sanity check: true should always verify
+
+verify bool_true()
+  assert true;

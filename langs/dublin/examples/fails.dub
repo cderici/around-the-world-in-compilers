@@ -1,0 +1,4 @@
+// this is false for signed max int because bitvectors wrap around
+
+verify signed_bad(x i32)
+  assert x + 1 > x;

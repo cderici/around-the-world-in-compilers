@@ -24,6 +24,8 @@ enum class TokenKind {
   Star,
   Slash,
   Equal,
+  EqualEqual,
+  BangEqual,
   Less,
   LessEqual,
   Greater,
@@ -41,6 +43,10 @@ enum class TokenKind {
   KwBinaryOp,
   KwUnaryOp,
   KwVar,
+  KwVerify,
+  KwAssert,
+  KwTrue,
+  KwFalse,
 
 };
 

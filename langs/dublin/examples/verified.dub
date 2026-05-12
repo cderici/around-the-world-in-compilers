@@ -1,0 +1,4 @@
+// for every x, check that x + 0 == x
+
+verify add_zero(x i32)
+  assert x + 0 == x;

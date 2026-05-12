@@ -6,12 +6,14 @@ CompileFlags:
     - -Ilangs/athens/include
     - -Ilangs/berlin/include
     - -Ilangs/cairo/include
+    - -Ilangs/dublin/include
     - -Ishared/frontend/lex/include
     - -Ishared/frontend/parse/include
     - -I../../athens/include
     - -I../athens/include
     - -I../berlin/include
     - -I../cairo/include
+    - -I../dublin/include
     - -I../../../shared/frontend/lex/include
     - -I../../../shared/frontend/parse/include
     - -isystem/usr/lib/llvm-20/include

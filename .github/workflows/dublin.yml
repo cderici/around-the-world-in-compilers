@@ -1,0 +1,28 @@
+name: DublinCI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-and-test-dublin:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install LLVM 21, MLIR 21, and Z3
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget gnupg lsb-release z3
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 21
+          sudo apt-get install -y clang-21 llvm-21 llvm-21-dev libmlir-21 libmlir-21-dev mlir-21-tools
+
+      - name: Build Dublin
+        run: make dublin
+
+      - name: Test Dublin
+        run: make -C langs/dublin test

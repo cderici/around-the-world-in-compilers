@@ -1,0 +1,4 @@
+// for every 8-bit x, check that x <= x under unsigned comparison
+
+verify unsigned_wrap(x i8)
+  assert ule(x, x);
