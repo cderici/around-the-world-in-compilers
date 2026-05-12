@@ -30,7 +30,7 @@ def loopTest()
 Running Berlin prints MLIR:
 
 ```sh
-./berlin langs/berlin/examples/simple_loop.ath
+./build/bin/berlin langs/berlin/examples/simple_loop.ath
 ```
 
 The output includes a private `func.func @loopTest` and an `scf.for` loop.

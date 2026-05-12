@@ -28,7 +28,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: berlin-binary
-          path: berlin
+          path: build/bin/berlin
 
   test-berlin:
     needs: build-berlin
@@ -42,14 +42,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: berlin-binary
-          path: .
+          path: build/bin
 
       - name: Test Berlin
         run: |
-          chmod +x ./berlin
-          ./berlin langs/berlin/examples/simple_loop.ath > /tmp/berlin_test.mlir
+          chmod +x ./build/bin/berlin
+          ./build/bin/berlin langs/berlin/examples/simple_loop.ath > /tmp/berlin_test.mlir
           grep -q "scf.for" /tmp/berlin_test.mlir && echo "simple_loop: PASS"
-          ./berlin langs/berlin/examples/nested_loop.ath > /tmp/berlin_test.mlir
+          ./build/bin/berlin langs/berlin/examples/nested_loop.ath > /tmp/berlin_test.mlir
           grep -q "scf.for" /tmp/berlin_test.mlir && echo "nested_loop: PASS"
-          ./berlin langs/berlin/examples/saxpy.ath > /tmp/berlin_test.mlir
+          ./build/bin/berlin langs/berlin/examples/saxpy.ath > /tmp/berlin_test.mlir
           grep -q "arith.mulf" /tmp/berlin_test.mlir && echo "saxpy: PASS"

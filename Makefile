@@ -1,15 +1,16 @@
 LANGS := athens berlin cairo dublin
 
-.PHONY: all $(LANGS) clean clean-%
+.PHONY: all $(LANGS) clean clean-% clean-build
 
 all: $(LANGS)
 
 $(LANGS):
 	$(MAKE) -C langs/$@
-	cp langs/$@/$@ $@
 
-clean: $(addprefix clean-,$(LANGS))
+clean: $(addprefix clean-,$(LANGS)) clean-build
 
 clean-%:
 	$(MAKE) -C langs/$* clean || true
-	rm -f $*
+
+clean-build:
+	rm -rf build

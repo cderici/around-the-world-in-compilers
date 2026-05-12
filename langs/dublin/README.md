@@ -22,12 +22,12 @@ make dublin
 Run an example:
 
 ```sh
-./dublin langs/dublin/examples/verified.dub
+./build/bin/dublin langs/dublin/examples/verified.dub
 ```
 
 For debugging, you can also see the generated MLIR `smt` dialect or SMT-LIB:
 
 ```sh
-./dublin --emit-smt langs/dublin/examples/verified.dub
-./dublin --emit-smt2 langs/dublin/examples/verified.dub
+./build/bin/dublin --emit-smt langs/dublin/examples/verified.dub
+./build/bin/dublin --emit-smt2 langs/dublin/examples/verified.dub
 ```

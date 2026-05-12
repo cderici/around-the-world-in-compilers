@@ -47,6 +47,10 @@ const char *tokenKindName(frontend::lex::TokenKind kind) {
     return "Slash";
   case TokenKind::Equal:
     return "Equal";
+  case TokenKind::EqualEqual:
+    return "EqualEqual";
+  case TokenKind::BangEqual:
+    return "BangEqual";
   case TokenKind::Less:
     return "Less";
   case TokenKind::LessEqual:
@@ -79,6 +83,14 @@ const char *tokenKindName(frontend::lex::TokenKind kind) {
     return "KwUnaryOp";
   case TokenKind::KwVar:
     return "KwVar";
+  case TokenKind::KwVerify:
+    return "KwVerify";
+  case TokenKind::KwAssert:
+    return "KwAssert";
+  case TokenKind::KwTrue:
+    return "KwTrue";
+  case TokenKind::KwFalse:
+    return "KwFalse";
   }
 
   return "<unknown>";

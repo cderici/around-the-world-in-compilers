@@ -4,7 +4,7 @@ Athens is a small expression-oriented language I built on top of LLVM.  It follo
 
 Athens can either run programs through LLVM's ORC JIT or emit standalone LLVM IR. You can run: 
 ```
-./athens --llvmir program.ath > program.ll
+./build/bin/athens --llvmir program.ath > program.ll
 ```
 to produce the LLVM IR without extra driver noise and use it with external tools such as `opt`, `llc`, etc.
 
@@ -31,28 +31,28 @@ make
 
 For the REPL, run Athens with no input file.
 ```
-./athens
+./build/bin/athens
 ```
 
 Pass an Athens source file as the first argument.
 ```
-./athens my-source.ath
+./build/bin/athens my-source.ath
 ```
 
 To get the LLVM IR, pass in in the `--llvmir` flag:
 ```
-./athens --llvmir test-programs/fib.ath > fibsIR.ll
+./build/bin/athens --llvmir test-programs/fib.ath > fibsIR.ll
 ```
 
 That flag is useful for REPL experimentation too:
 ```
-./athens --llvmir
+./build/bin/athens --llvmir
 ```
 
 There are some test programs that you can check out:
 
 ```
-./athens test-programs/mandelbrot.ath
+./build/bin/athens test-programs/mandelbrot.ath
 ```
 
 should give you:

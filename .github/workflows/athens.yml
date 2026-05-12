@@ -28,7 +28,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: athens-binary
-          path: athens
+          path: build/bin/athens
 
   test-athens:
     needs: build-athens
@@ -42,10 +42,10 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: athens-binary
-          path: .
+          path: build/bin
 
       - name: Test Athens
         run: |
-          chmod +x ./athens
-          ./athens test-programs/mandelbrot.ath
-          ./athens test-programs/fib.ath
+          chmod +x ./build/bin/athens
+          ./build/bin/athens test-programs/mandelbrot.ath
+          ./build/bin/athens test-programs/fib.ath

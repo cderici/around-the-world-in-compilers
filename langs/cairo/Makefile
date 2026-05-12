@@ -1,4 +1,6 @@
 CXX			:= clang++-20
+ROOT := ../..
+BINDIR := $(ROOT)/build/bin
 CXXFLAGS	:= -std=c++23 -O2 -g -DNDEBUG -I include -I ../athens/include -Wall -Wextra -pedantic -stdlib=libstdc++ --gcc-toolchain=/usr -rdynamic
 SRC			:= src/cairo.cpp src/nvptx_codegen.cpp src/cuda_driver_launcher.cpp
 ATHENS_SRC	:= ../athens/src/codegen.cpp ../athens/src/athens_lex_rules.cpp ../athens/src/error.cpp
@@ -13,51 +15,52 @@ CXXFLAGS += -DHAVE_CUDA -I/usr/local/cuda/include
 LDFLAGS += -L/usr/local/cuda/lib64 -lcuda
 endif
 
-TARGET		:= cairo
+TARGET		:= $(BINDIR)/cairo
 
 .PHONY: compile run test clean
 
 compile: $(TARGET)
 
 $(TARGET): $(SRC) $(ATHENS_SRC) $(SHARED_LEX_SRC)
+	mkdir -p $(BINDIR)
 	$(CXX) $(CXXFLAGS) $(SRC) $(ATHENS_SRC) $(SHARED_LEX_SRC) \
 		-isystem $(LLVMINC) \
 		$(LDFLAGS) $(LLVMLIBS) -o $(TARGET)
 
 run: $(TARGET)
-	./$(TARGET) examples/vec_add.ath
+	$(TARGET) examples/vec_add.ath
 
 test: $(TARGET)
 	@echo "=== vec_add.ath (LLVM IR) ==="
-	./$(TARGET) --emit-llvm examples/vec_add.ath > /tmp/cairo_test.ll 2>&1; \
+	$(TARGET) --emit-llvm examples/vec_add.ath > /tmp/cairo_test.ll 2>&1; \
 	if grep -q "nvptx64-nvidia-cuda" /tmp/cairo_test.ll && grep -q "kernel_vec_add" /tmp/cairo_test.ll; then \
 		echo "  PASS: LLVM IR contains target triple and kernel"; \
 	else \
 		echo "  FAIL"; exit 1; \
 	fi
 	@echo "=== vec_add.ath (PTX) ==="
-	./$(TARGET) examples/vec_add.ath > /tmp/cairo_test.ptx 2>&1; \
+	$(TARGET) examples/vec_add.ath > /tmp/cairo_test.ptx 2>&1; \
 	if grep -q "kernel_vec_add" /tmp/cairo_test.ptx; then \
 		echo "  PASS: PTX contains kernel entry"; \
 	else \
 		echo "  FAIL"; exit 1; \
 	fi
 	@echo "=== scale.ath (PTX) ==="
-	./$(TARGET) examples/scale.ath > /tmp/cairo_test.ptx 2>&1; \
+	$(TARGET) examples/scale.ath > /tmp/cairo_test.ptx 2>&1; \
 	if grep -q "kernel_scale" /tmp/cairo_test.ptx; then \
 		echo "  PASS: PTX contains kernel entry"; \
 	else \
 		echo "  FAIL"; exit 1; \
 	fi
 	@echo "=== simple_kernel.ath (PTX) ==="
-	./$(TARGET) examples/simple_kernel.ath > /tmp/cairo_test.ptx 2>&1; \
+	$(TARGET) examples/simple_kernel.ath > /tmp/cairo_test.ptx 2>&1; \
 	if grep -q "kernel_simple" /tmp/cairo_test.ptx; then \
 		echo "  PASS: PTX contains kernel entry"; \
 	else \
 		echo "  FAIL"; exit 1; \
 	fi
 	@echo "=== --run without CUDA ==="
-	! ./$(TARGET) --run examples/simple_kernel.ath > /tmp/cairo_run.out 2>&1; \
+	! $(TARGET) --run examples/simple_kernel.ath > /tmp/cairo_run.out 2>&1; \
 	if grep -q "without CUDA support" /tmp/cairo_run.out; then \
 		echo "  PASS: --run reports missing CUDA support"; \
 	else \

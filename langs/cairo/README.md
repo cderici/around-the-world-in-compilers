@@ -37,10 +37,10 @@ def kernel_vec_add(a b c)
 
 Use:
 
-    ./cairo foo.ath                 # emit PTX
-    ./cairo --emit-llvm foo.ath     # emit LLVM IR
-    ./cairo --run foo.ath           # launch first kernel_* with demo buffers
-    ./cairo --run --run-size 1024 foo.ath
+    ./build/bin/cairo foo.ath                 # emit PTX
+    ./build/bin/cairo --emit-llvm foo.ath     # emit LLVM IR
+    ./build/bin/cairo --run foo.ath           # launch first kernel_* with demo buffers
+    ./build/bin/cairo --run --run-size 1024 foo.ath
 
 ## Build
 

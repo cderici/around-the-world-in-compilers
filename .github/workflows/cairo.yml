@@ -28,7 +28,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: cairo-binary
-          path: cairo
+          path: build/bin/cairo
 
   test-cairo:
     needs: build-cairo
@@ -42,19 +42,19 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: cairo-binary
-          path: .
+          path: build/bin
 
       - name: Test Cairo examples
         run: |
-          chmod +x ./cairo
-          ./cairo --emit-llvm langs/cairo/examples/vec_add.ath > /tmp/cairo_test.ll
+          chmod +x ./build/bin/cairo
+          ./build/bin/cairo --emit-llvm langs/cairo/examples/vec_add.ath > /tmp/cairo_test.ll
           grep -q "nvptx64-nvidia-cuda" /tmp/cairo_test.ll && echo "vec_add LLVM target triple: PASS"
           grep -q "kernel_vec_add" /tmp/cairo_test.ll && echo "vec_add kernel: PASS"
-          ./cairo langs/cairo/examples/vec_add.ath > /tmp/cairo_test.ptx
+          ./build/bin/cairo langs/cairo/examples/vec_add.ath > /tmp/cairo_test.ptx
           grep -q "kernel_vec_add" /tmp/cairo_test.ptx && echo "vec_add PTX: PASS"
-          ./cairo langs/cairo/examples/scale.ath > /tmp/cairo_test.ptx
+          ./build/bin/cairo langs/cairo/examples/scale.ath > /tmp/cairo_test.ptx
           grep -q "kernel_scale" /tmp/cairo_test.ptx && echo "scale PTX: PASS"
-          ./cairo langs/cairo/examples/simple_kernel.ath > /tmp/cairo_test.ptx
+          ./build/bin/cairo langs/cairo/examples/simple_kernel.ath > /tmp/cairo_test.ptx
           grep -q "kernel_simple" /tmp/cairo_test.ptx && echo "simple_kernel PTX: PASS"
-          ! ./cairo --run langs/cairo/examples/simple_kernel.ath > /tmp/cairo_run.out 2>&1
+          ! ./build/bin/cairo --run langs/cairo/examples/simple_kernel.ath > /tmp/cairo_run.out 2>&1
           grep -q "without CUDA support" /tmp/cairo_run.out && echo "non-CUDA --run guard: PASS"
